@@ -20,3 +20,12 @@ model Generate {
   CreatedAt    DateTime @default(now())
   UpdatedAt    DateTime @updatedAt
 }
+
+model User_data {
+  id_user      String   @id @default(uuid()) @db.Uuid
+  encrypt_hash String
+  key          String
+  iv           String
+  CreatedAt    DateTime @default(now())
+  UpdatedAt    DateTime @updatedAt
+}
