@@ -1,0 +1,22 @@
+//! bomb
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Generate {
+  id_gen       String   @id @default(uuid()) @db.Uuid
+  title        String?
+  data_hash    String[] // ทำให้ `data_hash` เป็น list ที่ non-nullable
+  encrypt_hash String?
+  key          String?
+  iv           String?
+  CreatedAt    DateTime @default(now())
+  UpdatedAt    DateTime @updatedAt
+}
