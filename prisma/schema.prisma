@@ -26,6 +26,7 @@ model User_data {
   encrypt_hash String
   key          String
   iv           String
+  status       Boolean  @default(true)
   CreatedAt    DateTime @default(now())
   UpdatedAt    DateTime @updatedAt
 }

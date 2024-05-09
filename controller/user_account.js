@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import { 
-    add_user_data,
+    add_user_data, 
+    get_all_user_data, 
+    get_by_id_user_data, 
+    edit_user_data,
 
 } from '../services/index.js';
 
@@ -42,7 +45,68 @@ const add_user = async (req, res) => {
     }
 };
 
+const get_all_user = async (req, res) => {
+    const result = await get_all_user_data();
+
+    if (result.error) {
+        return res.status(500).json({ error: result.error });
+    }
+
+    return res.status(200).json(result);
+};
+
+
+const get_by_id_user = async (req, res) => {
+    const { id_user } = req.body;
+    const result = await get_by_id_user_data(id_user);
+
+    if (result.error) {
+        if (result.error === 'id_user not found') {
+            return res.status(404).json({ error: result.error });
+        }
+        return res.status(400).json({ error: result.error });
+    }
+
+    return res.status(200).json(result);
+};
+
+const edit_user = async (req, res) => {
+    // รับข้อมูลจาก req.body
+    const { 
+        id_user,
+        username,
+        fristname,
+        lastname,
+        id_gard,
+        tel,
+        address,
+
+     } = req.body;
+
+    try {
+        // เรียกฟังก์ชัน UPDateHash พร้อมพารามิเตอร์ที่ต้องการ
+        const updatedData = await edit_user_data(
+            id_user,
+            username,
+            fristname,
+            lastname,
+            id_gard,
+            tel,
+            address,
+        );
+
+        // ส่ง HTTP status code 200 พร้อมข้อมูลที่อัพเดทแล้ว
+        return res.status(200).json({ message: 'Update successful', data: updatedData });
+    } catch (error) {
+        // หากเกิดข้อผิดพลาด ส่ง HTTP status code 400 พร้อมข้อความข้อผิดพลาด
+        return res.status(400).json({ error: error.message });
+    }
+};
+
 
 export {
     add_user,
+    get_all_user,
+    get_by_id_user,
+    edit_user,
 }
