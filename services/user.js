@@ -122,73 +122,108 @@ const get_by_id_user_data = async (id_user) => {
 const edit_user_data = async (
     id_user,
     username,
-    fristname,
+    firstname,
     lastname,
     id_gard,
     tel,
-    address,
-
+    address
 ) => {
     try {
-
-        if (id_user) {
-
-            // ตรวจสอบข้อมูล title และ data_hash
-            if (!username || !fristname || !lastname || !id_gard || !tel || !address || !Array.isArray(address)) {
-                return { error: 'all data are required, and address must be an array' };
-            }
-
-            // กำหนด key และ iv (initialization vector)
-            const key = crypto.randomBytes(32);
-            const iv = crypto.randomBytes(16);
-
-            // สร้างตัวเข้ารหัส
-            const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-
-            // รวบรวมข้อมูล เข้าด้วยกันเป็น JSON string
-            const combinedData = JSON.stringify({ username, fristname, lastname, id_gard, tel, address });
-
-            // เข้ารหัสข้อมูล
-            let encrypted = cipher.update(combinedData, 'utf8', 'hex');
-            encrypted += cipher.final('hex');
-
-            // บันทึกข้อมูลลงตาราง `User_data` ในฐานข้อมูล
-            const newEntry = await prisma.user_data.update({
-                where: {
-                    id_user: id_user,
-                },
-                data: {
-                    encrypt_hash: encrypted,
-                    key: key.toString('hex'),
-                    iv: iv.toString('hex'),
-                },
-            });
-
-            // คืนค่าผลลัพธ์ที่บันทึกในฐานข้อมูล
-            return {
-                id_gen: newEntry.id_gen,
-                username: username,
-                fristname: fristname,
-                lastname: lastname,
-                id_gard: id_gard,
-                tel: tel,
-                address: address,
-                encrypt_hash: newEntry.encrypt_hash,
-                key: newEntry.key,
-                iv: newEntry.iv,
-                Status: newEntry.status,
-                Status_update: 'SUCCESS',
-            };
-
-        } else {
-            // หากไม่มี id_user ที่ระบุ ให้ส่งคืนข้อผิดพลาด
-            return { error: 'by id not provided' };
+        // ตรวจสอบอินพุต
+        if (!id_user) {
+            return { error: 'id_user is required' };
         }
 
+        const byID = await prisma.user_data.findUnique({
+            where: {
+                id_user: id_user,
+            },
+        });
+
+        // ตรวจสอบว่าพบข้อมูลผู้ใช้หรือไม่
+        if (!byID) {
+            return { error: 'user not found' };
+        }
+
+        if (!username || !firstname || !lastname || !id_gard || !tel || !address || !Array.isArray(address)) {
+            return { error: 'All data are required, and address must be an array' };
+        }
+
+        // กำหนด key และ iv
+        const key = crypto.randomBytes(32);
+        const iv = crypto.randomBytes(16);
+
+        // สร้างตัวเข้ารหัส
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+        // รวมข้อมูลเป็น JSON string
+        const combinedData = JSON.stringify({ username, firstname, lastname, id_gard, tel, address });
+
+        // เข้ารหัสข้อมูล
+        let encrypted = cipher.update(combinedData, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+
+        // อัปเดตข้อมูลในฐานข้อมูล
+        const updatedUserData = await prisma.user_data.update({
+            where: {
+                id_user: id_user,
+            },
+            data: {
+                encrypt_hash: encrypted,
+                key: key.toString('hex'),
+                iv: iv.toString('hex'),
+            },
+        });
+
+        // ถอดรหัสข้อมูล
+        const decryptedData = await DecryptHash(updatedUserData.encrypt_hash, updatedUserData.key, updatedUserData.iv);
+
+        // คืนค่าผลลัพธ์
+        return {
+            id_gen: updatedUserData.id_gen,
+            username: decryptedData.username,
+            firstname: decryptedData.firstname,
+            lastname: decryptedData.lastname,
+            id_gard: decryptedData.id_gard,
+            tel: decryptedData.tel,
+            address: decryptedData.address,
+            encrypt_hash: updatedUserData.encrypt_hash,
+            key: updatedUserData.key,
+            iv: updatedUserData.iv,
+            Status: updatedUserData.status,
+            Status_update: 'SUCCESS',
+        };
+
     } catch (error) {
-        // คืนค่าข้อผิดพลาด
+        console.error('Error:', error);
         return { error: 'Internal Server Error' };
     } finally {
+        // ปิดการเชื่อมต่อฐานข้อมูล
+        await prisma.$disconnect();
+    }
+};
+
+const delete_user_data = async (id_user) => {
+    try {
+        // ตรวจสอบข้อมูลที่ส่งเข้ามา
+        if (!id_user) {
+            return { error: 'id_user is required' };
+        }
+
+        // ลบข้อมูลในฐานข้อมูล โดยใช้ `id_user` เพื่อค้นหาข้อมูลที่ต้องการลบ
+        const delete_user = await prisma.user_data.delete({
+            where: {
+                id_user: id_user,
+            },
+        });
+
+        // คืนค่าผลลัพธ์การลบข้อมูล
+        return delete_user;
+    } catch (err) {
+        console.error('Delete failed:', err);
+        return { error: 'Delete failed' };
+    } finally {
+        // ปิดการเชื่อมต่อกับฐานข้อมูลเมื่อดำเนินการเสร็จสิ้น
         await prisma.$disconnect();
     }
 };
@@ -198,5 +233,5 @@ export {
     get_all_user_data,
     get_by_id_user_data,
     edit_user_data,
-
+    delete_user_data,
 }

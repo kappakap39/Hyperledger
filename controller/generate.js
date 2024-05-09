@@ -1,10 +1,3 @@
-import { Gateway, Wallets } from 'fabric-network';
-import { fileURLToPath } from 'url';
-import path from 'path';
-import httpMocks from 'node-mocks-http';  // ใช้ library สำหรับสร้าง req และ res จำลอง
-import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
 import { 
     GenerateSHA, 
     Generate,

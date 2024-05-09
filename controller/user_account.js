@@ -1,9 +1,9 @@
-import { PrismaClient } from '@prisma/client';
 import { 
     add_user_data, 
     get_all_user_data, 
     get_by_id_user_data, 
     edit_user_data,
+    delete_user_data,
 
 } from '../services/index.js';
 
@@ -96,17 +96,30 @@ const edit_user = async (req, res) => {
         );
 
         // ส่ง HTTP status code 200 พร้อมข้อมูลที่อัพเดทแล้ว
-        return res.status(200).json({ message: 'Update successful', data: updatedData });
+        return res.status(200).json({ message: 'Update', data: updatedData });
     } catch (error) {
         // หากเกิดข้อผิดพลาด ส่ง HTTP status code 400 พร้อมข้อความข้อผิดพลาด
         return res.status(400).json({ error: error.message });
     }
 };
 
+const delete_user = async (req, res) => {
+    const { id_user } = req.body;
+    const result = await delete_user_data(id_user);
+
+    if (result.error) {
+        // หากเกิดข้อผิดพลาด ส่ง HTTP status code ที่เหมาะสม
+        return res.status(400).json({ error: result.error });
+    }
+
+    // ส่งผลลัพธ์ที่ลบได้
+    return res.status(200).json({ message: 'Delete', data: result });
+};
 
 export {
     add_user,
     get_all_user,
     get_by_id_user,
     edit_user,
+    delete_user,
 }

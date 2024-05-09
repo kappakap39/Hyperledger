@@ -12,3 +12,4 @@ export { add_user_data } from './user.js';
 export { get_all_user_data } from './user.js';
 export { get_by_id_user_data } from './user.js';
 export { edit_user_data } from './user.js';
+export { delete_user_data } from './user.js';
