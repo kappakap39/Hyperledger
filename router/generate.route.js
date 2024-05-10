@@ -7,7 +7,7 @@ import {
     generateSHAHandler,
     DeleteHashHandler,
     UPDateHashHandler,
-} from '../controller/generate.js';
+} from '../controller/service/generate.js';
 
 const routerGenerate = express.Router();
 
