@@ -2,7 +2,7 @@ import express from 'express';
 import { 
     GenerateHandler,
     DecryptHashHandler,
-    getdata_genHandler,
+    getData_genHandler,
     getByHashHandler,
     generateSHAHandler,
     DeleteHashHandler,
@@ -13,10 +13,10 @@ const routerGenerate = express.Router();
 
 routerGenerate.post('/hash', GenerateHandler);
 routerGenerate.post('/hashSHA', generateSHAHandler);
-routerGenerate.post('/decrypthash', DecryptHashHandler);
-routerGenerate.get('/getdata', getdata_genHandler);
+routerGenerate.post('/decryptHash', DecryptHashHandler);
+routerGenerate.get('/getData', getData_genHandler);
 routerGenerate.get('/ByHash', getByHashHandler);
-routerGenerate.patch('/updatehash', UPDateHashHandler);
+routerGenerate.patch('/updateHash', UPDateHashHandler);
 routerGenerate.delete('/DeleteHash', DeleteHashHandler);
 
 export default routerGenerate;

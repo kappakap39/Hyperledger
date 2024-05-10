@@ -1,7 +1,7 @@
 import { 
     GenerateSHA, 
     Generate,
-    getdata_gen,
+    getData_gen,
     getByHash,
     DecryptHash,
     UPDateHash,
@@ -45,8 +45,8 @@ const GenerateHandler = async (req, res) => {
 
 
 
-const getdata_genHandler = async (req, res) => {
-    const result = await getdata_gen();
+const getData_genHandler = async (req, res) => {
+    const result = await getData_gen();
 
     if (result.error) {
         return res.status(500).json({ error: result.error });
@@ -119,7 +119,7 @@ const UPDateHashHandler = async (req, res) => {
 export {
     GenerateHandler,
     generateSHAHandler,
-    getdata_genHandler,
+    getData_genHandler,
     getByHashHandler,
     DecryptHashHandler,
     UPDateHashHandler,

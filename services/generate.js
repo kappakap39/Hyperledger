@@ -75,7 +75,7 @@ const Generate = async (title, data_hash) => {
     }
 };
 
-const getdata_gen = async () => {
+const getData_gen = async () => {
     try {
         const data = await prisma.generate.findMany({});
         return { data };
@@ -228,7 +228,7 @@ const UPDateHash = async (id_gen, title, data_hash) => {
 export {
     GenerateSHA,
     Generate,
-    getdata_gen,
+    getData_gen,
     getByHash,
     DecryptHash,
     UPDateHash,
