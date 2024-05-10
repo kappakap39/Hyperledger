@@ -5,7 +5,7 @@ import {
     edit_user_data,
     delete_user_data,
 
-} from '../services/index.js';
+} from '../../services/index.js';
 
 
 const add_user = async (req, res) => {

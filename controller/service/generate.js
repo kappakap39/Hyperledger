@@ -7,7 +7,7 @@ import {
     UPDateHash,
     DeleteHash,
 
-} from '../services/index.js';
+} from '../../services/index.js';
 
 
 //! Generate Hash
