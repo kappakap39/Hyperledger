@@ -1,5 +1,5 @@
 //!server
-export {  } from './server/ethers.js';
+export { ethersCheckMoney } from './server/ethers.js';
 export { web3_check_money } from './server/web3.js';
 
 //!service
