@@ -17,6 +17,9 @@ const add_user = async (req, res) => {
             id_gard,
             tel,
             address,
+            namebank,
+            sourceAccount,
+            amount,
 
          } = req.body;
         const result = await add_user_data( 
@@ -26,6 +29,10 @@ const add_user = async (req, res) => {
             id_gard,
             tel,
             address,
+            namebank,
+            sourceAccount,
+            amount,
+
          );
         
         // ส่ง HTTP response ด้วย status code 200

@@ -17,16 +17,44 @@ model Generate {
   encrypt_hash String?
   key          String?
   iv           String?
-  CreatedAt    DateTime @default(now())
-  UpdatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
-model User_data {
-  id_user      String   @id @default(uuid()) @db.Uuid
-  encrypt_hash String
+model UserData {
+  id_user      String        @id @default(uuid()) @db.Uuid
+  encryptHash  String
   key          String
   iv           String
-  status       Boolean  @default(true)
-  CreatedAt    DateTime @default(now())
-  UpdatedAt    DateTime @updatedAt
+  status       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[] @relation(name: "UserTransactions")
+}
+
+model Transaction {
+  id_transaction String               @id @default(uuid()) @db.Uuid
+  namebank       String
+  sourceAccount  String
+  amount         Float?
+  currency       String?              @default("THB")
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  id_user        String               @db.Uuid
+  user           UserData             @relation(fields: [id_user], references: [id_user], name: "UserTransactions")
+  histories      TransactionHistory[] @relation(name: "TransactionHistories")
+}
+
+model TransactionHistory {
+  id_history          String      @id @default(uuid()) @db.Uuid
+  destinationAccount  String?
+  namebankdestination String?
+  currency            String?     @default("THB")
+  type                String
+  amount              Float
+  timestamp           DateTime
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  id_transaction      String      @db.Uuid
+  transaction         Transaction @relation(fields: [id_transaction], references: [id_transaction], name: "TransactionHistories")
 }
