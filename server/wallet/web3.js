@@ -41,7 +41,7 @@ const web3_check_money_server = async (account) => {
         console.log(`Balance in account ${account}: ${balanceEther} ETH`);
 
         // ดึงข้อมูลอัตราแลกเปลี่ยนจาก CoinGecko API
-        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd,thb');
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd,thb,eth,btc');
         const data = await response.json();
 
         // รับอัตราแลกเปลี่ยนในหน่วย USD และ THB

@@ -13,11 +13,14 @@ const add_user_data = async (
     id_gard,
     tel,
     address,
+    namebank,
+    sourceAccount,
+    amount,
 
 ) => {
     try {
         // ตรวจสอบข้อมูล title และ data_hash
-        if (!username || !fristname || !lastname || !id_gard || !tel || !address || !Array.isArray(address)) {
+        if (!username || !fristname || !lastname || !id_gard || !tel || !address || !Array.isArray(address)|| !sourceAccount || !namebank) {
             return { error: 'add all data are required, and address must be an array' };
         }
 
@@ -36,11 +39,20 @@ const add_user_data = async (
         encrypted += cipher.final('hex');
 
         // บันทึกข้อมูลลงตาราง `User_data` ในฐานข้อมูล
-        const newEntry = await prisma.user_data.create({
+        const newEntry = await prisma.userData.create({
             data: {
-                encrypt_hash: encrypted,
+                encryptHash: encrypted,
                 key: key.toString('hex'),
                 iv: iv.toString('hex'),
+            },
+        });
+
+        const create_transaction = await prisma.transaction.create({
+            data: {
+                id_user: newEntry.id_user,
+                namebank: namebank,
+                sourceAccount: sourceAccount,
+                amount: amount,
             },
         });
 
@@ -53,10 +65,14 @@ const add_user_data = async (
             // id_gard: id_gard,
             // tel: tel,
             // address: address,
-            encrypt_hash: newEntry.encrypt_hash,
+            encryptHash: newEntry.encryptHash,
             key: newEntry.key,
             iv: newEntry.iv,
             Status: newEntry.status,
+            id_transaction: create_transaction.id_transaction,
+            account_number: create_transaction.account_number,
+            bank: create_transaction.bank,
+            amount_transaction: create_transaction.amount,
             Status_create: 'SUCCESS',
         };
     } catch (error) {
@@ -69,7 +85,7 @@ const add_user_data = async (
 
 const get_all_user_data = async () => {
     try {
-        const data = await prisma.user_data.findMany({});
+        const data = await prisma.userData.findMany({});
         return { data };
     } catch (error) {
         console.error('Error:', error);
@@ -84,7 +100,7 @@ const get_by_id_user_data = async (id_user) => {
     try {
         if (id_user) {
             // ค้นหาผู้ใช้ตาม id_user
-            const byID = await prisma.user_data.findUnique({
+            const byID = await prisma.userData.findUnique({
                 where: {
                     id_user: id_user,
                 },
@@ -96,12 +112,12 @@ const get_by_id_user_data = async (id_user) => {
             }
 
             // รับค่าจากข้อมูลที่พบ
-            const encrypt_hash = byID.encrypt_hash;
+            const encryptHash = byID.encryptHash;
             const key = byID.key;
             const iv = byID.iv;
 
             // ถอดรหัสข้อมูล
-            const result = await DecryptHash(encrypt_hash, key, iv);
+            const result = await DecryptHash(encryptHash, key, iv);
 
             // ส่งคืนผลลัพธ์ในรูปแบบของออบเจ็กต์
             return { byID, result };
@@ -134,7 +150,7 @@ const edit_user_data = async (
             return { error: 'id_user is required' };
         }
 
-        const byID = await prisma.user_data.findUnique({
+        const byID = await prisma.userData.findUnique({
             where: {
                 id_user: id_user,
             },
@@ -164,19 +180,19 @@ const edit_user_data = async (
         encrypted += cipher.final('hex');
 
         // อัปเดตข้อมูลในฐานข้อมูล
-        const updatedUserData = await prisma.user_data.update({
+        const updatedUserData = await prisma.userData.update({
             where: {
                 id_user: id_user,
             },
             data: {
-                encrypt_hash: encrypted,
+                encryptHash: encrypted,
                 key: key.toString('hex'),
                 iv: iv.toString('hex'),
             },
         });
 
         // ถอดรหัสข้อมูล
-        const decryptedData = await DecryptHash(updatedUserData.encrypt_hash, updatedUserData.key, updatedUserData.iv);
+        const decryptedData = await DecryptHash(updatedUserData.encryptHash, updatedUserData.key, updatedUserData.iv);
 
         // คืนค่าผลลัพธ์
         return {
@@ -187,7 +203,7 @@ const edit_user_data = async (
             id_gard: decryptedData.id_gard,
             tel: decryptedData.tel,
             address: decryptedData.address,
-            encrypt_hash: updatedUserData.encrypt_hash,
+            encryptHash: updatedUserData.encryptHash,
             key: updatedUserData.key,
             iv: updatedUserData.iv,
             Status: updatedUserData.status,
@@ -211,7 +227,7 @@ const delete_user_data = async (id_user) => {
         }
 
         // ลบข้อมูลในฐานข้อมูล โดยใช้ `id_user` เพื่อค้นหาข้อมูลที่ต้องการลบ
-        const delete_user = await prisma.user_data.delete({
+        const delete_user = await prisma.userData.delete({
             where: {
                 id_user: id_user,
             },

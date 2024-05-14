@@ -17,7 +17,8 @@ const web3_check_money = async (req, res) => {
             balance: {
                 eth: `${balanceEther} ETH`,
                 usd: `${balanceUSD} USD`,
-                thb: `${balanceTHB} THB`
+                thb: `${balanceTHB} THB`,
+                "library": "Web3"
             }
         });
     } catch (error) {
