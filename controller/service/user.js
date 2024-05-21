@@ -4,6 +4,7 @@ import {
     get_by_id_user_data, 
     edit_user_data,
     delete_user_data,
+    add_data_userWallets,
 
 } from '../../services/index.js';
 
@@ -22,7 +23,9 @@ const add_user = async (req, res) => {
             amount,
 
          } = req.body;
-        const result = await add_user_data( 
+         //! add
+        // const result = await add_user_data( 
+        const result = await add_data_userWallets( 
             username,
             fristname,
             lastname,

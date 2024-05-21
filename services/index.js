@@ -9,6 +9,7 @@ export { DecryptHash } from './generate.js';
 
 //!User
 export { add_user_data } from './user.js';
+export { add_data_userWallets } from './user.js';
 export { get_all_user_data } from './user.js';
 export { get_by_id_user_data } from './user.js';
 export { edit_user_data } from './user.js';

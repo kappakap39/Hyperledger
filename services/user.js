@@ -5,6 +5,10 @@ import {
 } from '../services/index.js';
 const prisma = new PrismaClient();
 
+import { Gateway, Wallets } from 'fabric-network';
+import { resolve, join } from 'path';
+import { readFileSync } from 'fs';
+
 
 const add_user_data = async (
     username,
@@ -20,7 +24,7 @@ const add_user_data = async (
 ) => {
     try {
         // ตรวจสอบข้อมูล title และ data_hash
-        if (!username || !fristname || !lastname || !id_gard || !tel || !address || !Array.isArray(address)|| !sourceAccount || !namebank) {
+        if (!username || !fristname || !lastname || !id_gard || !tel || !address || !Array.isArray(address) || !sourceAccount || !namebank) {
             return { error: 'add all data are required, and address must be an array' };
         }
 
@@ -58,7 +62,7 @@ const add_user_data = async (
 
         // คืนค่าผลลัพธ์ที่บันทึกในฐานข้อมูล
         return {
-            id_gen: newEntry.id_gen,
+            id_user: newEntry.id_user,
             // fristname: username,
             // fristname: fristname,
             // lastname: lastname,
@@ -70,8 +74,8 @@ const add_user_data = async (
             iv: newEntry.iv,
             Status: newEntry.status,
             id_transaction: create_transaction.id_transaction,
-            account_number: create_transaction.account_number,
-            bank: create_transaction.bank,
+            sourceAccount: create_transaction.sourceAccount,
+            namebank: create_transaction.namebank,
             amount_transaction: create_transaction.amount,
             Status_create: 'SUCCESS',
         };
@@ -244,10 +248,151 @@ const delete_user_data = async (id_user) => {
     }
 };
 
+// const enrollUser = async (newEntry, create_transaction) => {
+//     // ข้อมูลการลงทะเบียนจำลอง
+//     return {
+//         certificate: `-----BEGIN CERTIFICATE-----
+// User encryptHash: ${JSON.stringify(newEntry.encryptHash)}
+// User key: ${JSON.stringify(newEntry.key)}
+// User iv: ${JSON.stringify(newEntry.iv)}
+// Transaction id_transaction: ${JSON.stringify(create_transaction.id_transaction)}
+// Transaction namebank: ${JSON.stringify(create_transaction.namebank)}
+// Transaction sourceAccount: ${JSON.stringify(create_transaction.sourceAccount)}
+// -----END CERTIFICATE-----`,
+//         key: {
+//             toBytes: function () {
+//                 return Buffer.from('fakePrivateKeyBytes');
+//             }
+//         }
+//     };
+// };
+
+const add_data_userWallets = async (
+    username,
+    firstname,
+    lastname,
+    id_card,
+    tel,
+    address,
+    namebank,
+    sourceAccount,
+    amount
+) => {
+    try {
+        // ตรวจสอบข้อมูล
+        if (!username || !firstname || !lastname || !id_card || !tel || !address || !Array.isArray(address) || !sourceAccount || !namebank) {
+            return { error: 'add all data are required, and address must be an array' };
+        }
+
+        // กำหนด key และ iv
+        const key = crypto.randomBytes(32);
+        const iv = crypto.randomBytes(16);
+
+        // สร้างตัวเข้ารหัส
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+
+        // รวบรวมข้อมูลเป็น JSON string
+        const combinedData = JSON.stringify({ username, firstname, lastname, id_card, tel, address });
+
+        // เข้ารหัสข้อมูล
+        let encrypted = cipher.update(combinedData, 'utf8', 'hex');
+        encrypted += cipher.final('hex');
+
+        // บันทึกข้อมูลลงตาราง `User_data` ในฐานข้อมูล
+        const newEntry = await prisma.userData.create({
+            data: {
+                encryptHash: encrypted,
+                key: key.toString('hex'),
+                iv: iv.toString('hex'),
+            },
+        });
+
+        const create_transaction = await prisma.transaction.create({
+            data: {
+                id_user: newEntry.id_user,
+                namebank: namebank,
+                sourceAccount: sourceAccount,
+                amount: amount,
+            },
+        });
+
+        //! สร้างกระเป๋าเงินของผู้ใช้ใน Hyperledger Fabric
+        // const walletPath = "../wallet/user";
+        // const wallet = await Wallets.newFileSystemWallet(walletPath);
+        // console.log(`Wallet path: ${walletPath}`);
+        const walletPath = join(process.cwd(), 'wallet');
+        const wallet = await Wallets.newFileSystemWallet(walletPath);
+        console.log(`Wallet path: ${walletPath}`);
+
+        // ตรวจสอบว่ามีตัวตนของผู้ใช้อยู่ในกระเป๋าเงินหรือไม่
+        const identityLabel = newEntry.id_user;
+        const identity = await wallet.get(identityLabel);
+        if (!identity) {
+            console.log(`ไม่มีตัวตนของผู้ใช้ "${identityLabel}" อยู่ในกระเป๋าเงิน`);
+            console.log(`พยายามลงทะเบียนผู้ใช้ "${identityLabel}"`);
+            // ข้อมูลการลงทะเบียนจำลอง (สำหรับการทดสอบเท่านั้น)
+            const enrollment = await enrollUser(newEntry, create_transaction);
+            // สร้างตัวตนจากใบรับรองและกุญแจส่วนตัว
+            const x509Identity = {
+                credentials: {
+                    certificate: enrollment.certificate,
+                    privateKey: enrollment.key.toBytes(),
+                },
+                mspId: 'Org1MSP',
+                type: 'X.509',
+            };
+            // เพิ่มตัวตนลงในกระเป๋าเงิน
+            await wallet.put(identityLabel, x509Identity);
+            console.log(`ลงทะเบียนผู้ใช้ "${identityLabel}" เข้าสู่กระเป๋าเงินเรียบร้อยแล้ว`);
+        }
+
+        // คืนค่าผลลัพธ์ที่บันทึกในฐานข้อมูล
+        return {
+            id_user: newEntry.id_user,
+            encryptHash: newEntry.encryptHash,
+            key: newEntry.key,
+            iv: newEntry.iv,
+            Status: newEntry.status,
+            id_transaction: create_transaction.id_transaction,
+            sourceAccount: create_transaction.sourceAccount,
+            namebank: create_transaction.namebank,
+            amount_transaction: create_transaction.amount,
+            Status_create: 'SUCCESS',
+        };
+    } catch (error) {
+        // คืนค่าข้อผิดพลาด
+        return { error: 'Internal Server Error' };
+    } finally {
+        await prisma.$disconnect();
+    }
+};
+
+// ฟังก์ชันสำหรับการลงทะเบียนผู้ใช้ (สำหรับการทดสอบเท่านั้น)
+const enrollUser = async (newEntry, create_transaction) => {
+    // ข้อมูลการลงทะเบียนจำลอง (คุณอาจเปลี่ยนส่วนนี้เป็นการเรียก CA แทน)
+    return {
+        certificate: `-----BEGIN CERTIFICATE-----
+User encryptHash: ${newEntry.encryptHash}
+User key: ${newEntry.key}
+User iv: ${newEntry.iv}
+Transaction id_transaction: ${create_transaction.id_transaction}
+Transaction namebank: ${create_transaction.namebank}
+Transaction sourceAccount: ${create_transaction.sourceAccount}
+-----END CERTIFICATE-----`,
+        key: {
+            toBytes: function () {
+                return Buffer.from('fakePrivateKeyBytes'); // ควรใช้กุญแจส่วนตัวที่ถูกต้องที่ได้จาก CA
+            }
+        }
+    };
+};
+
+
 export {
     add_user_data,
     get_all_user_data,
     get_by_id_user_data,
     edit_user_data,
     delete_user_data,
+    add_data_userWallets,
 }
